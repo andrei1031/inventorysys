@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS inventory (
     qty_out NUMERIC DEFAULT 0,
     category TEXT DEFAULT 'General',
     icon TEXT,
+    unit TEXT DEFAULT 'pcs',
+    unit_in TEXT DEFAULT 'pcs',
+    unit_out TEXT DEFAULT 'pcs',
     archived_category TEXT,
     archived_date TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
