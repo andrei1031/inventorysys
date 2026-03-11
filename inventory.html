@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claysio's Inventory System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        .toast {
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+        }
+        .modal {
+            animation: slideIn 0.2s ease;
+        }
+        .item-card {
+            transition: all 0.2s ease;
+        }
+        .item-card:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 font-sans min-h-screen">
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-20 right-4 z-50 flex flex-col gap-2"></div>
+
+    <!-- Confirm Dialog -->
+    <div id="confirmDialog" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full mx-4 modal shadow-2xl">
+            <h3 id="confirmTitle" class="text-lg font-bold mb-2">Confirm Action</h3>
+            <p id="confirmMessage" class="text-slate-500 mb-6">Are you sure?</p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirm()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Cancel</button>
+                <button id="confirmBtn" class="flex-1 py-3 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full mx-4 modal shadow-2xl">
+            <h3 class="text-lg font-bold mb-4">Edit Item</h3>
+            <input type="hidden" id="editId">
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase">Item Name</label>
+                    <input id="editName" type="text" class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-emerald-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase">In</label>
+                        <input id="editQtyIn" type="number" class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 uppercase">Out</label>
+                        <input id="editQtyOut" type="number" class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-orange-500 outline-none">
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeEditModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Cancel</button>
+                <button onclick="saveEdit()" class="flex-1 py-3 rounded-xl font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Inventory Modal -->
+    <div id="newInventoryModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full mx-4 modal shadow-2xl">
+            <h3 class="text-lg font-bold mb-4">Create New Inventory</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase">Inventory Name</label>
+                    <input id="newInventoryName" type="text" placeholder="e.g. Construction, Electrical, Farm" 
+                        class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-emerald-500 outline-none">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase">Icon</label>
+                    <select id="newInventoryIcon" class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-emerald-500 outline-none cursor-pointer">
+                        <option value="fa-box">📦 Box (Default)</option>
+                        <option value="fa-tractor">🚜 Farm</option>
+                        <option value="fa-tools">🔧 Construction</option>
+                        <option value="fa-bolt">⚡ Electrical</option>
+                        <option value="fa-truck">🚚 Logistics</option>
+                        <option value="fa-warehouse">🏭 Warehouse</option>
+                        <option value="fa-store">🏪 Store</option>
+                        <option value="fa-hard-hat">🦺 Safety</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeNewInventoryModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Cancel</button>
+                <button onclick="createNewInventory()" class="flex-1 py-3 rounded-xl font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Inventory Modal -->
+    <div id="deleteInventoryModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full mx-4 modal shadow-2xl">
+            <h3 class="text-lg font-bold mb-4 text-red-500">Delete Inventory</h3>
+            <p id="deleteInventoryMessage" class="text-slate-500 mb-4">Are you sure you want to delete this inventory? All items will be moved to Archive.</p>
+            <div class="flex gap-3">
+                <button onclick="closeDeleteInventoryModal()" class="flex-1 py-3 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Cancel</button>
+                <button onclick="confirmDeleteInventory()" class="flex-1 py-3 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition">Move to Archive</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Archive Modal -->
+    <div id="archiveModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-2xl w-full mx-4 modal shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">🗑️ Archive / Trash</h3>
+                <button onclick="closeArchiveModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <p class="text-sm text-slate-500 mb-4">Items in archive are permanently deleted after 30 days.</p>
+            <div id="archiveContainer" class="flex-1 overflow-y-auto space-y-2 min-h-[200px]">
+                <!-- Archived items will be listed here -->
+            </div>
+            <div class="mt-4 pt-4 border-t border-slate-200">
+                <button onclick="emptyArchive()" class="w-full py-3 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition">
+                    <i class="fas fa-trash-alt mr-2"></i>Empty Archive
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bg-white border-b border-slate-200 p-4 sticky top-0 z-10">
+        <div class="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <div class="flex items-center gap-3">
+                <h1 class="text-xl font-black text-emerald-700 tracking-tight">CLAYSIO'S INVENTORY</h1>
+                <button onclick="openArchiveModal()" class="text-xs font-bold px-3 py-1 bg-slate-100 text-slate-600 rounded-full hover:bg-slate-200 transition">
+                    <i class="fas fa-archive mr-1"></i>Archive
+                </button>
+            </div>
+            
+            <!-- Category Selector -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <select id="categorySelect" onchange="switchCategory()" 
+                    class="p-2 pl-3 pr-8 bg-emerald-50 text-emerald-700 font-bold rounded-xl border-none outline-none cursor-pointer text-sm">
+                </select>
+                <button onclick="openNewInventoryModal()" class="p-2 px-3 bg-emerald-100 text-emerald-700 rounded-xl hover:bg-emerald-200 transition text-sm font-bold">
+                    <i class="fas fa-plus mr-1"></i> New
+                </button>
+                <button id="manageCategoriesBtn" onclick="toggleCategoryManagement()" class="p-2 px-3 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition text-sm font-bold hidden">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div id="syncStatus" class="text-xs font-bold px-3 py-1 bg-green-100 text-green-700 rounded-full">
+                    <i class="fas fa-cloud mr-1"></i> Cloud
+                </div>
+                <button onclick="exportCSV()" class="text-xs font-bold px-3 py-1 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition">
+                    <i class="fas fa-download mr-1"></i> Export
+                </button>
+                <button onclick="confirmClearCategory()" class="text-xs font-bold px-3 py-1 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition">
+                    <i class="fas fa-trash mr-1"></i> Clear
+                </button>
+            </div>
+        </div>
+        
+        <!-- Category Management Panel (Hidden by default) -->
+        <div id="categoryManagement" class="hidden max-w-5xl mx-auto mt-3 pt-3 border-t border-slate-200">
+            <div class="flex items-center gap-2 overflow-x-auto pb-2">
+                <span class="text-xs font-bold text-slate-400 uppercase">Manage:</span>
+                <div id="categoryList" class="flex gap-2"></div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto p-4 md:p-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-slate-400 text-xs font-bold uppercase">Items</p>
+                <p id="totalItems" class="text-2xl font-bold">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-slate-400 text-xs font-bold uppercase">Total In</p>
+                <p id="totalIn" class="text-2xl font-bold text-blue-500">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-slate-400 text-xs font-bold uppercase">Total Out</p>
+                <p id="totalOut" class="text-2xl font-bold text-orange-500">0</p>
+            </div>
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-slate-400 text-xs font-bold uppercase">Low Stock</p>
+                <p id="lowStockCount" class="text-2xl font-bold text-red-500">0</p>
+            </div>
+        </div>
+
+        <!-- Search & Sort -->
+        <div class="flex flex-col md:flex-row gap-4 mb-4">
+            <div class="relative flex-1">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input id="searchInput" type="text" placeholder="Search items..." 
+                    class="w-full pl-10 p-4 bg-white rounded-2xl border border-slate-200 focus:ring-2 ring-emerald-500 outline-none"
+                    oninput="render()">
+            </div>
+            <select id="sortSelect" onchange="render()" class="p-4 bg-white rounded-2xl border border-slate-200 outline-none cursor-pointer">
+                <option value="name">Sort by Name</option>
+                <option value="balance">Sort by Quantity</option>
+                <option value="in">Sort by In</option>
+                <option value="out">Sort by Out</option>
+            </select>
+        </div>
+
+        <!-- Update Form -->
+        <section class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 mb-10">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">Update Inventory</h2>
+                <span id="currentCategoryBadge" class="text-xs font-bold px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full"></span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input id="name" type="text" placeholder="Item Name (e.g. Fertilizer)" 
+                    class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-emerald-500 transition-all outline-none"
+                    onkeypress="if(event.key === 'Enter') addItem()">
+                <div class="flex gap-2">
+                    <input id="qtyIn" type="number" placeholder="In" min="0"
+                        class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-blue-500 outline-none"
+                        onkeypress="if(event.key === 'Enter') addItem()">
+                    <input id="qtyOut" type="number" placeholder="Out" min="0"
+                        class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-orange-500 outline-none"
+                        onkeypress="if(event.key === 'Enter') addItem()">
+                </div>
+                <button onclick="addItem()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-emerald-200 active:scale-95">
+                    <i class="fas fa-plus mr-2"></i>Save Record
+                </button>
+            </div>
+            <p class="text-xs text-slate-400 mt-2"><i class="fas fa-keyboard mr-1"></i>Press Enter to quickly save</p>
+        </section>
+
+        <!-- Error State -->
+        <div id="errorState" class="hidden text-center py-16">
+            <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-exclamation-triangle text-3xl text-red-400"></i>
+            </div>
+            <h3 class="text-lg font-bold text-red-400 mb-2">Connection Error</h3>
+            <p id="errorMessage" class="text-slate-300">Failed to connect to server</p>
+            <button onclick="fetchInventory()" class="mt-4 px-4 py-2 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600">
+                <i class="fas fa-redo mr-2"></i>Retry
+            </button>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-16">
+            <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-box-open text-3xl text-slate-300"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-400 mb-2">No Items Yet</h3>
+            <p class="text-slate-300">Add your first inventory item above</p>
+        </div>
+
+        <!-- Inventory Grid -->
+        <div id="inventoryContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        </div>
+    </main>
+
+    <!-- Load Configuration -->
+    <script src="config.js"></script>
+
+    <script>
+        // Constants
+        const ARCHIVE_CATEGORY = '__ARCHIVE__';
+        const DEFAULT_CATEGORY = 'General';
+        
+        // In-memory cache
+        let inventory = [];
+        let categories = [];
+        let currentCategory = DEFAULT_CATEGORY;
+        let isManagingCategories = false;
+
+        // Icon mapping
+        const iconMap = {
+            'fa-box': '📦',
+            'fa-tractor': '🚜',
+            'fa-tools': '🔧',
+            'fa-bolt': '⚡',
+            'fa-truck': '🚚',
+            'fa-warehouse': '🏭',
+            'fa-store': '🏪',
+            'fa-hard-hat': '🦺'
+        };
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const colors = {
+                success: 'bg-emerald-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500'
+            };
+            const icons = {
+                success: 'fa-check',
+                error: 'fa-times',
+                info: 'fa-info'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${colors[type]} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2`;
+            toast.innerHTML = `<i class="fas ${icons[type]}"></i> ${message}`;
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Fetch categories from Supabase
+        async function fetchCategories() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/inventory?select=category&category=not.is.null&category=not.eq.__ARCHIVE__&order=category.asc`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch categories');
+                }
+                
+                const data = await response.json();
+                
+                // Get unique categories (excluding archive)
+                const uniqueCategories = [...new Set(data.map(item => item.category))].filter(c => c !== ARCHIVE_CATEGORY);
+                
+                // Ensure "General" exists
+                if (!uniqueCategories.includes(DEFAULT_CATEGORY)) {
+                    uniqueCategories.unshift(DEFAULT_CATEGORY);
+                }
+                
+                categories = uniqueCategories;
+                renderCategorySelect();
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+                categories = [DEFAULT_CATEGORY];
+                renderCategorySelect();
+            }
+        }
+
+        // Render category dropdown
+        function renderCategorySelect() {
+            const select = document.getElementById('categorySelect');
+            const currentValue = select.value || currentCategory;
+            
+            select.innerHTML = categories.map(cat => {
+                const icon = getCategoryIcon(cat);
+                return `<option value="${cat}" ${cat === currentValue ? 'selected' : ''}>${icon} ${cat}</option>`;
+            }).join('');
+            
+            // Show manage button if more than 1 category
+            if (categories.length > 1) {
+                document.getElementById('manageCategoriesBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('manageCategoriesBtn').classList.add('hidden');
+            }
+            
+            // Update badge
+            document.getElementById('currentCategoryBadge').innerText = currentCategory;
+        }
+
+        // Get icon for category
+        function getCategoryIcon(category) {
+            // Try to find icon in inventory items first
+            const itemWithIcon = inventory.find(item => item.category === category && item.icon);
+            if (itemWithIcon && itemWithIcon.icon && iconMap[itemWithIcon.icon]) {
+                return iconMap[itemWithIcon.icon];
+            }
+            
+            // Default icons based on category name
+            const categoryLower = category.toLowerCase();
+            if (categoryLower.includes('farm')) return '🚜';
+            if (categoryLower.includes('construction')) return '🔧';
+            if (categoryLower.includes('electrical')) return '⚡';
+            if (categoryLower.includes('logistics')) return '🚚';
+            if (categoryLower.includes('warehouse')) return '🏭';
+            if (categoryLower.includes('store')) return '🏪';
+            if (categoryLower.includes('safety')) return '🦺';
+            if (categoryLower.includes('archive') || categoryLower.includes('trash')) return '🗑️';
+            
+            return '📦';
+        }
+
+        // Switch category
+        function switchCategory() {
+            currentCategory = document.getElementById('categorySelect').value;
+            document.getElementById('currentCategoryBadge').innerText = currentCategory;
+            render();
+        }
+
+        // Toggle category management
+        function toggleCategoryManagement() {
+            isManagingCategories = !isManagingCategories;
+            const panel = document.getElementById('categoryManagement');
+            const btn = document.getElementById('manageCategoriesBtn');
+            
+            if (isManagingCategories) {
+                panel.classList.remove('hidden');
+                btn.classList.add('bg-emerald-500', 'text-white');
+                btn.classList.remove('bg-slate-100', 'text-slate-600');
+                renderCategoryList();
+            } else {
+                panel.classList.add('hidden');
+                btn.classList.remove('bg-emerald-500', 'text-white');
+                btn.classList.add('bg-slate-100', 'text-slate-600');
+            }
+        }
+
+        // Render category list for management
+        function renderCategoryList() {
+            const list = document.getElementById('categoryList');
+            list.innerHTML = categories.map(cat => {
+                const icon = getCategoryIcon(cat);
+                const isDefault = cat === DEFAULT_CATEGORY;
+                return `
+                    <div class="flex items-center gap-1 px-2 py-1 bg-white rounded-lg border border-slate-200 text-xs">
+                        <span>${icon}</span>
+                        <span class="font-medium">${cat}</span>
+                        ${!isDefault ? `<button onclick="showDeleteInventoryModal('${cat}')" class="ml-1 text-red-400 hover:text-red-600"><i class="fas fa-times"></i></button>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Fetch inventory from Supabase using fetch API
+        async function fetchInventory() {
+            try {
+                document.getElementById('errorState').classList.add('hidden');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/inventory?select=*&order=created_at.desc`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch');
+                }
+                
+                inventory = await response.json();
+                
+                // Ensure all items have a category
+                inventory.forEach(item => {
+                    if (!item.category) {
+                        item.category = DEFAULT_CATEGORY;
+                    }
+                });
+                
+                await fetchCategories();
+                render();
+            } catch (error) {
+                console.error('Error fetching:', error);
+                document.getElementById('errorState').classList.remove('hidden');
+                document.getElementById('errorMessage').innerText = error.message;
+                showToast('Failed to connect: ' + error.message, 'error');
+            }
+        }
+
+        // Confirm Dialog
+        let confirmCallback = null;
+        function showConfirm(title, message, callback) {
+            document.getElementById('confirmTitle').innerText = title;
+            document.getElementById('confirmMessage').innerText = message;
+            document.getElementById('confirmDialog').classList.remove('hidden');
+            confirmCallback = callback;
+        }
+
+        function closeConfirm() {
+            document.getElementById('confirmDialog').classList.add('hidden');
+            confirmCallback = null;
+        }
+
+        document.getElementById('confirmBtn').onclick = function() {
+            if (confirmCallback) confirmCallback();
+            closeConfirm();
+        };
+
+        // Edit Modal
+        let pendingEditName = null;
+        function openEditModal(id, name, qtyIn, qtyOut) {
+            document.getElementById('editId').value = id;
+            document.getElementById('editName').value = name;
+            document.getElementById('editQtyIn').value = qtyIn;
+            document.getElementById('editQtyOut').value = qtyOut;
+            pendingEditName = name;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            pendingEditName = null;
+        }
+
+        async function saveEdit() {
+            const id = document.getElementById('editId').value;
+            const newName = document.getElementById('editName').value.trim();
+            const qtyIn = parseInt(document.getElementById('editQtyIn').value) || 0;
+            const qtyOut = parseInt(document.getElementById('editQtyOut').value) || 0;
+
+            if (!newName) {
+                showToast('Please enter item name', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/inventory?id=eq.${id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        name: newName,
+                        qty_in: qtyIn,
+                        qty_out: qtyOut
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update');
+                }
+                
+                await fetchInventory();
+                closeEditModal();
+                showToast('Item updated successfully');
+            } catch (error) {
+                console.error('Error updating:', error);
+                showToast('Failed to update item: ' + error.message, 'error');
+            }
+        }
+
+        // Delete item - removes all entries with this name in current category
+        async function deleteItem(name) {
+            showConfirm('Delete Item', `Are you sure you want to delete all records for "${name}" in ${currentCategory}?`, async () => {
+                try {
+                    const response = await fetch(`${SUPABASE_URL}/rest/v1/inventory?name=eq.${encodeURIComponent(name)}&category=eq.${encodeURIComponent(currentCategory)}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Failed to delete');
+                    }
+                    
+                    await fetchInventory();
+                    showToast(`"${name}" deleted`);
+                } catch (error) {
+                    console.error('Error deleting:', error);
+                    showToast('Failed to delete item: ' + error.message, 'error');
+                }
+            });
+        }
+
+        // Clear all data for current category
+        async function confirmClearCategory() {
+            const categoryItems = inventory.filter(item => item.category === currentCategory);
+            if (categoryItems.length === 0) {
+                showToast('No items to clear in this inventory', 'info');
+                return;
+            }
+            showConfirm('Clear Inventory', `This will permanently delete all items in "${currentCategory}". This action cannot be undone.`, async () => {
+                try {
+                    const response = await fetch(`${SUPABASE_URL}/rest/v1/inventory?category=eq.${encodeURIComponent(currentCategory)}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Prefer': 'return=minimal'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Failed to clear');
+                    }
+                    
+                    await fetchInventory();
+                    showToast(`${currentCategory} cleared`);
+                } catch (error) {
+                    console.error('Error clearing:', error);
+                    showToast('Failed to clear data: ' + error.message, 'error');
+                }
+            });
+        }
+
+        // Export to CSV
+        function exportCSV() {
+            const categoryItems = inventory.filter(item => item.category === currentCategory);
+            if (categoryItems.length === 0) {
+                showToast('No data to export', 'info');
+                return;
+            }
+
+            // Group and sum
+            const summary = categoryItems.reduce((acc, curr) => {
+                if (!acc[curr.name]) acc[curr.name] = { in: 0, out: 0 };
+                acc[curr.name].in += Number(curr.qty_in);
+                acc[curr.name].out += Number(curr.qty_out);
+                return acc;
+            }, {});
+
+            let csv = `Item Name,In,Out,Balance,Status\n`;
+            Object.keys(summary).forEach(name => {
+                const item = summary[name];
+                const balance = item.in - item.out;
+                const status = balance < 10 ? 'Low Stock' : 'In Stock';
+                csv += `"${name}",${item.in},${item.out},${balance},${status}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentCategory.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            showToast('CSV exported successfully');
+        }
+
+        // Main render function
+        function render() {
+            const container = document.getElementById('inventoryContainer');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const sortBy = document.getElementById('sortSelect').value;
+            
+            container.innerHTML = '';
+            
+            // Filter by current category
+            const categoryItems = inventory.filter(item => item.category === currentCategory);
+            
+            // Group by item name and sum
+            const summary = categoryItems.reduce((acc, curr) => {
+                if (!acc[curr.name]) acc[curr.name] = { id: curr.id, in: 0, out: 0 };
+                acc[curr.name].in += Number(curr.qty_in);
+                acc[curr.name].out += Number(curr.qty_out);
+                return acc;
+            }, {});
+
+            // Filter by search
+            let items = Object.keys(summary).filter(name => 
+                name.toLowerCase().includes(searchTerm)
+            );
+
+            // Sort
+            items.sort((a, b) => {
+                const itemA = summary[a];
+                const itemB = summary[b];
+                const balanceA = itemA.in - itemA.out;
+                const balanceB = itemB.in - itemB.out;
+                
+                switch(sortBy) {
+                    case 'name': return a.localeCompare(b);
+                    case 'balance': return balanceB - balanceA;
+                    case 'in': return itemB.in - itemA.in;
+                    case 'out': return itemB.out - itemA.out;
+                    default: return 0;
+                }
+            });
+
+            // Empty state
+            if (items.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+            }
+
+            // Stats
+            let totalIn = 0, totalOut = 0, lowStock = 0;
+            
+            items.forEach(name => {
+                const item = summary[name];
+                const balance = item.in - item.out;
+                totalIn += item.in;
+                totalOut += item.out;
+                if (balance < 10) lowStock++;
+
+                // Status styling
+                let statusColor, statusText;
+                if (balance < 10) {
+                    statusColor = 'text-red-600';
+                    statusText = 'LOW STOCK';
+                } else if (balance < 25) {
+                    statusColor = 'text-orange-600';
+                    statusText = 'MEDIUM';
+                } else {
+                    statusColor = 'text-emerald-600';
+                    statusText = 'IN STOCK';
+                }
+
+                container.innerHTML += `
+                    <div class="item-card bg-white p-6 rounded-3xl border border-slate-100 flex justify-between items-center hover:border-emerald-200 transition-all shadow-sm hover:shadow-md">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-slate-500 text-xs uppercase tracking-widest mb-1">${name}</h3>
+                            <div class="flex gap-4 text-sm font-medium">
+                                <span class="text-blue-500"><i class="fas fa-arrow-down mr-1"></i>In: ${item.in}</span>
+                                <span class="text-orange-500"><i class="fas fa-arrow-up mr-1"></i>Out: ${item.out}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-3xl font-black ${statusColor}">${balance}</p>
+                            <p class="text-[10px] font-bold ${statusColor} uppercase">${statusText}</p>
+                        </div>
+                        <div class="flex flex-col gap-2 ml-4">
+                            <button onclick="openEditModal('${item.id}', '${name}', ${item.in}, ${item.out})" 
+                                class="p-2 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-100 transition" title="Edit">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button onclick="deleteItem('${name}')" 
+                                class="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Update stats
+            document.getElementById('totalItems').innerText = items.length;
+            document.getElementById('totalIn').innerText = totalIn;
+            document.getElementById('totalOut').innerText = totalOut;
+            document.getElementById('lowStockCount').innerText = lowStock;
+        }
+
+        // Add new item to Supabase
+        async function addItem() {
+            const name = document.getElementById('name').value.trim();
+            const qtyIn = parseInt(document.getElementById('qtyIn').value) || 0;
+            const qtyOut = parseInt(document.getElementById('qtyOut').value) || 0;
+
+            if (!name) {
+                showToast('Please enter item name', 'error');
+                document.getElementById('name').classList.add('ring-2', 'ring-red-500');
+                setTimeout(() => {
+                    document.getElementById('name').classList.remove('ring-2', 'ring-red-500');
+                }, 2000);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/inventory`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        qty_in: qtyIn,
+                        qty_out: qtyOut,
+                        category: currentCategory
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to add');
+                }
+                
+                await fetchInventory();
+                
+                // Clear fields
+                document.getElementById('name').value = '';
+                document.getElementById('qtyIn').value = '';
+                document.getElementById('qtyOut').value = '';
+                
+                showToast(`"${name}" added to ${currentCategory}`);
+            } catch (error) {
+                console.error('Error adding:', error);
+                showToast('Failed to add item: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== NEW INVENTORY FUNCTIONS ====================
+
+        // New Inventory Modal Functions
+        function openNewInventoryModal() {
+            document.getElementById('newInventoryName').value = '';
+            document.getElementById('newInventoryIcon').value = 'fa-box';
+            document.getElementById('newInventoryModal').classList.remove('hidden');
+        }
+
+        function closeNewInventoryModal() {
+            document.getElementById('newInventoryModal').classList.add('hidden');
+        }
+
+        async function createNewInventory() {
+            const name = document.getElementById('newInventoryName').value.trim();
+            const icon = document.getElementById('newInventoryIcon').value;
+
+            if (!name) {
+                showToast('Please enter inventory name', 'error');
+                return;
+            }
+
+            // Check if category already exists
+            if (categories.some(cat => cat.toLowerCase() === name.toLowerCase())) {
+                showToast('Inventory already exists', 'error');
+                return;
+            }
+
+            try {
+                // Check if there are any items in General to determine if we need to create sample
+                const checkResponse = await fetch(`${SUPABASE_URL}/rest/v1/inventory?category=eq.${encodeURIComponent(name)}&limit=1`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                const existingItems = await checkResponse.json();
+                
+                // Only add inventory to the dropdown by adding a placeholder item
+                // This creates the category without showing in main view
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/inventory`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        name: '___' + name + '___init___',
+                        qty_in: 0,
+                        qty_out: 0,
+                        category: name,
+                        icon: icon
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to create');
+                }
+
+                await fetchInventory();
+                closeNewInventoryModal();
+                
+                // Switch to new category
+                currentCategory = name;
+                renderCategorySelect();
+                document.getElementById('categorySelect').value = name;
+                render();
+                
+                showToast(`"${name}" inventory created`);
+            } catch (error) {
+                console.error('Error creating inventory:', error);
+                showToast('Failed to create inventory: ' + error.message, 'error');
+            }
+        }
+
+        // Delete Inventory Modal Functions - Move to Archive instead of delete
+        let inventoryToDelete = null;
+        function showDeleteInventoryModal(category) {
+            if (category === DEFAULT_CATEGORY) {
+                showToast('Cannot delete default inventory', 'error');
+                return;
+            }
+            inventoryToDelete = category;
+            document.getElementById('deleteInventoryMessage').innerText = 
+                `Are you sure you want to delete "${category}"? All items will be moved to Archive so you can restore them later.`;
+            document.getElementById('deleteInventoryModal').classList.remove('hidden');
+        }
+
+        function closeDeleteInventoryModal() {
+            document.getElementById('deleteInventoryModal').classList.add('hidden');
+            inventoryToDelete = null;
+        }
+
+        async function confirmDeleteInventory() {
+            if (!inventoryToDelete || inventoryToDelete === DEFAULT_CATEGORY) return;
+
+            try {
+                // Get all items in the category to archive
+                const itemsToArchive = inventory.filter(item => item.category === inventoryToDelete);
+                
+                // Delete current items and add to archive with original category info
+                for (const item of itemsToArchive) {
+                    // First delete the original
+                    await fetch(`${SUPABASE_URL}/rest/v1/inventory?id=eq.${item.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        }
+                    });
+                    
+                    // Then add to archive with metadata
+                    await fetch(`${SUPABASE_URL}/rest/v1/inventory`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify({
+                            name: item.name,
+                            qty_in: item.qty_in,
+                            qty_out: item.qty_out,
+                            category: ARCHIVE_CATEGORY,
+                            archived_category: inventoryToDelete, // Store original category
+                            archived_date: new Date().toISOString()
+                        })
+                    });
+                }
+                
+                // Switch to General if current category is deleted
+                if (currentCategory === inventoryToDelete) {
+                    currentCategory = DEFAULT_CATEGORY;
+                }
+                
+                await fetchInventory();
+                closeDeleteInventoryModal();
+                toggleCategoryManagement(); // Close management panel
+                showToast(`"${inventoryToDelete}" moved to Archive`);
+            } catch (error) {
+                console.error('Error deleting inventory:', error);
+                showToast('Failed to delete inventory: ' + error.message, 'error');
+            }
+        }
+
+        // ==================== ARCHIVE FUNCTIONS ====================
+
+        async function openArchiveModal() {
+            document.getElementById('archiveModal').classList.remove('hidden');
+            renderArchiveItems();
+        }
+
+        function closeArchiveModal() {
+            document.getElementById('archiveModal').classList.add('hidden');
+        }
+
+        async function renderArchiveItems() {
+            const container = document.getElementById('archiveContainer');
+            
+            // Get archived items
+            const archivedItems = inventory.filter(item => item.category === ARCHIVE_CATEGORY);
+            
+            if (archivedItems.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-inbox text-2xl text-slate-300"></i>
+                        </div>
+                        <p class="text-slate-400">Archive is empty</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Group by archived_category
+            const grouped = archivedItems.reduce((acc, item) => {
+                const origCat = item.archived_category || 'Unknown';
+                if (!acc[origCat]) acc[origCat] = [];
+                acc[origCat].push(item);
+                return acc;
+            }, {});
+
+            container.innerHTML = Object.keys(grouped).map(origCat => {
+                const items = grouped[origCat];
+                const date = items[0]?.archived_date ? new Date(items[0].archived_date).toLocaleDateString() : 'Unknown';
+                
+                return `
+                    <div class="bg-slate-50 rounded-xl p-3">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold text-sm text-slate-600">📁 ${origCat}</span>
+                            <span class="text-xs text-slate-400">${date}</span>
+                        </div>
+                        <div class="space-y-1">
+                            ${items.map(item => `
+                                <div class="flex justify-between items-center bg-white p-2 rounded-lg text-sm">
+                                    <span class="text-slate-700">${item.name}</span>
+                                    <div class="flex gap-1">
+                                        <button onclick="restoreFromArchive('${item.id}', '${item.name}', ${item.qty_in}, ${item.qty_out}, '${item.archived_category}')" 
+                                            class="px-2 py-1 text-xs bg-emerald-100 text-emerald-600 rounded hover:bg-emerald-200" title="Restore">
+                                            <i class="fas fa-trash-restore"></i>
+                                        </button>
+                                        <button onclick="permanentDeleteFromArchive('${item.id}')" 
+                                            class="px-2 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200" title="Delete Permanently">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button onclick="restoreAllFromArchive('${origCat}')" class="mt-2 w-full py-1 text-xs bg-blue-100 text-blue-600 rounded hover:bg-blue-200">
+                            <i class="fas fa-trash-restore mr-1"></i>Restore All from ${origCat}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function restoreFromArchive(id, name, qtyIn, qtyOut, origCategory) {
+            try {
+                // Delete from archive
+                await fetch(`${SUPABASE_URL}/rest/v1/inventory?id=eq.${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+
+                // Check if category still exists
+                const existingCats = categories.map(c => c.toLowerCase());
+                const targetCategory = existingCats.includes(origCategory.toLowerCase()) ? origCategory : DEFAULT_CATEGORY;
+
+                // Add back to original category (or General if deleted)
+                await fetch(`${SUPABASE_URL}/rest/v1/inventory`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        qty_in: qtyIn,
+                        qty_out: qtyOut,
+                        category: targetCategory
+                    })
+                });
+
+                await fetchInventory();
+                renderArchiveItems();
+                showToast(`"${name}" restored to ${targetCategory}`);
+            } catch (error) {
+                console.error('Error restoring:', error);
+                showToast('Failed to restore item', 'error');
+            }
+        }
+
+        async function restoreAllFromArchive(origCategory) {
+            const archivedItems = inventory.filter(item => item.category === ARCHIVE_CATEGORY && item.archived_category === origCategory);
+            
+            try {
+                // Check if category still exists
+                const existingCats = categories.map(c => c.toLowerCase());
+                const targetCategory = existingCats.includes(origCategory.toLowerCase()) ? origCategory : DEFAULT_CATEGORY;
+
+                for (const item of archivedItems) {
+                    // Delete from archive
+                    await fetch(`${SUPABASE_URL}/rest/v1/inventory?id=eq.${item.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        }
+                    });
+
+                    // Add back to original category
+                    await fetch(`${SUPABASE_URL}/rest/v1/inventory`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify({
+                            name: item.name,
+                            qty_in: item.qty_in,
+                            qty_out: item.qty_out,
+                            category: targetCategory
+                        })
+                    });
+                }
+
+                await fetchInventory();
+                renderArchiveItems();
+                showToast(`All items from "${origCategory}" restored to ${targetCategory}`);
+            } catch (error) {
+                console.error('Error restoring all:', error);
+                showToast('Failed to restore items', 'error');
+            }
+        }
+
+        async function permanentDeleteFromArchive(id) {
+            showConfirm('Delete Permanently', 'This item will be permanently deleted and cannot be recovered.', async () => {
+                try {
+                    await fetch(`${SUPABASE_URL}/rest/v1/inventory?id=eq.${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        }
+                    });
+
+                    await fetchInventory();
+                    renderArchiveItems();
+                    showToast('Item permanently deleted');
+                } catch (error) {
+                    console.error('Error deleting:', error);
+                    showToast('Failed to delete item', 'error');
+                }
+            });
+        }
+
+        async function emptyArchive() {
+            const archivedItems = inventory.filter(item => item.category === ARCHIVE_CATEGORY);
+            if (archivedItems.length === 0) {
+                showToast('Archive is already empty', 'info');
+                return;
+            }
+
+            showConfirm('Empty Archive', 'This will permanently delete ALL archived items. This action cannot be undone.', async () => {
+                try {
+                    await fetch(`${SUPABASE_URL}/rest/v1/inventory?category=eq.${encodeURIComponent(ARCHIVE_CATEGORY)}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Prefer': 'return=minimal'
+                        }
+                    });
+
+                    await fetchInventory();
+                    renderArchiveItems();
+                    showToast('Archive emptied');
+                } catch (error) {
+                    console.error('Error emptying archive:', error);
+                    showToast('Failed to empty archive', 'error');
+                }
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchInventory();
+            
+            // Auto-refresh every 10 seconds
+            setInterval(fetchInventory, 10000);
+        });
+    </script>
+</body>
+</html>
