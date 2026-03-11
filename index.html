@@ -354,6 +354,17 @@
         let currentCategory = DEFAULT_CATEGORY;
         let isManagingCategories = false;
 
+        // Escape HTML special characters to prevent XSS and fix broken onclick handlers
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '<')
+                .replace(/>/g, '>')
+                .replace(/"/g, '"')
+                .replace(/'/g, '&#39;');
+        }
+
         // Icon mapping
         const iconMap = {
             'fa-box': '📦',
@@ -814,7 +825,7 @@
                 container.innerHTML += `
                     <div class="item-card bg-white p-6 rounded-3xl border border-slate-100 flex justify-between items-center hover:border-emerald-200 transition-all shadow-sm hover:shadow-md">
                         <div class="flex-1">
-                            <h3 class="font-bold text-slate-500 text-xs uppercase tracking-widest mb-1">${name}</h3>
+                            <h3 class="font-bold text-slate-500 text-xs uppercase tracking-widest mb-1">${escapeHtml(name)}</h3>
                             <div class="flex gap-4 text-sm font-medium">
                                 <span class="text-blue-500"><i class="fas fa-arrow-down mr-1"></i>In: ${item.in} ${item.unit_in || 'pcs'}</span>
                                 <span class="text-orange-500"><i class="fas fa-arrow-up mr-1"></i>Out: ${item.out} ${item.unit_out || 'pcs'}</span>
@@ -826,11 +837,11 @@
                             <p class="text-[10px] text-slate-400">${displayUnit}</p>
                         </div>
                         <div class="flex flex-col gap-2 ml-4">
-                            <button onclick="openEditModal('${item.id}', '${name}', ${item.in}, ${item.out}, '${item.unit_in || 'pcs'}', '${item.unit_out || 'pcs'}')" 
+                            <button onclick="openEditModal('${item.id}', '${escapeHtml(name)}', ${item.in}, ${item.out}, '${item.unit_in || 'pcs'}', '${item.unit_out || 'pcs'}')"
                                 class="p-2 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-100 transition" title="Edit">
                                 <i class="fas fa-pen"></i>
                             </button>
-                            <button onclick="deleteItem('${name}')" 
+                            <button onclick="deleteItem('${escapeHtml(name)}')"
                                 class="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition" title="Delete">
                                 <i class="fas fa-trash"></i>
                             </button>
