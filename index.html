@@ -57,13 +57,31 @@
                     <input id="editName" type="text" class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-emerald-500 outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
+                    <div class="relative">
                         <label class="text-xs font-bold text-slate-400 uppercase">In</label>
                         <input id="editQtyIn" type="number" class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-blue-500 outline-none">
+                        <select id="editUnitIn" class="absolute right-2 bottom-2 bg-transparent text-xs font-bold text-slate-400 cursor-pointer outline-none">
+                            <option value="pcs">pcs</option>
+                            <option value="box">box</option>
+                            <option value="kg">kg</option>
+                            <option value="liter">L</option>
+                            <option value="meter">m</option>
+                            <option value="roll">roll</option>
+                            <option value="pack">pack</option>
+                        </select>
                     </div>
-                    <div>
+                    <div class="relative">
                         <label class="text-xs font-bold text-slate-400 uppercase">Out</label>
                         <input id="editQtyOut" type="number" class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-orange-500 outline-none">
+                        <select id="editUnitOut" class="absolute right-2 bottom-2 bg-transparent text-xs font-bold text-slate-400 cursor-pointer outline-none">
+                            <option value="pcs">pcs</option>
+                            <option value="box">box</option>
+                            <option value="kg">kg</option>
+                            <option value="liter">L</option>
+                            <option value="meter">m</option>
+                            <option value="roll">roll</option>
+                            <option value="pack">pack</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -225,21 +243,56 @@
                 <h2 class="text-lg font-bold">Update Inventory</h2>
                 <span id="currentCategoryBadge" class="text-xs font-bold px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full"></span>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <input id="name" type="text" placeholder="Item Name (e.g. Fertilizer)" 
-                    class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-emerald-500 transition-all outline-none"
+                    class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-emerald-500 transition-all outline-none col-span-1 md:col-span-1"
                     onkeypress="if(event.key === 'Enter') addItem()">
-                <div class="flex gap-2">
-                    <input id="qtyIn" type="number" placeholder="In" min="0"
-                        class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-blue-500 outline-none"
-                        onkeypress="if(event.key === 'Enter') addItem()">
-                    <input id="qtyOut" type="number" placeholder="Out" min="0"
-                        class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-orange-500 outline-none"
-                        onkeypress="if(event.key === 'Enter') addItem()">
+                <div class="flex gap-2 col-span-1 md:col-span-2">
+                    <div class="flex-1 relative">
+                        <input id="qtyIn" type="number" placeholder="In" min="0"
+                            class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-blue-500 outline-none"
+                            onkeypress="if(event.key === 'Enter') addItem()">
+                        <select id="unitIn" class="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent text-xs font-bold text-slate-400 cursor-pointer outline-none">
+                            <option value="pcs">pcs</option>
+                            <option value="box">box</option>
+                            <option value="kg">kg</option>
+                            <option value="liter">L</option>
+                            <option value="meter">m</option>
+                            <option value="roll">roll</option>
+                            <option value="pack">pack</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 relative">
+                        <input id="qtyOut" type="number" placeholder="Out" min="0"
+                            class="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 ring-orange-500 outline-none"
+                            onkeypress="if(event.key === 'Enter') addItem()">
+                        <select id="unitOut" class="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent text-xs font-bold text-slate-400 cursor-pointer outline-none">
+                            <option value="pcs">pcs</option>
+                            <option value="box">box</option>
+                            <option value="kg">kg</option>
+                            <option value="liter">L</option>
+                            <option value="meter">m</option>
+                            <option value="roll">roll</option>
+                            <option value="pack">pack</option>
+                        </select>
+                    </div>
                 </div>
                 <button onclick="addItem()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-emerald-200 active:scale-95">
-                    <i class="fas fa-plus mr-2"></i>Save Record
+                    <i class="fas fa-plus mr-2"></i>Save
                 </button>
+            </div>
+            <div class="flex items-center gap-4 mt-3">
+                <label class="text-xs font-bold text-slate-400 uppercase">Default Unit:</label>
+                <select id="defaultUnit" class="p-2 bg-slate-50 rounded-xl text-sm font-medium text-slate-600 cursor-pointer outline-none">
+                    <option value="pcs">Pieces (pcs)</option>
+                    <option value="box">Box</option>
+                    <option value="kg">Kilogram (kg)</option>
+                    <option value="liter">Liter (L)</option>
+                    <option value="meter">Meter (m)</option>
+                    <option value="roll">Roll</option>
+                    <option value="pack">Pack</option>
+                </select>
+                <span class="text-xs text-slate-400">This unit will be used for display</span>
             </div>
             <p class="text-xs text-slate-400 mt-2"><i class="fas fa-keyboard mr-1"></i>Press Enter to quickly save</p>
         </section>
@@ -271,12 +324,23 @@
     </main>
 
     <!-- Load Configuration -->
-    <script src="config.js?v=1"></script>
+    <script src="config.js"></script>
 
     <script>
         // Constants
         const ARCHIVE_CATEGORY = '__ARCHIVE__';
         const DEFAULT_CATEGORY = 'General';
+        
+        // Unit labels for display
+        const unitLabels = {
+            'pcs': 'pcs',
+            'box': 'box',
+            'kg': 'kg',
+            'liter': 'L',
+            'meter': 'm',
+            'roll': 'roll',
+            'pack': 'pack'
+        };
         
         // In-memory cache
         let inventory = [];
@@ -495,11 +559,13 @@
 
         // Edit Modal
         let pendingEditName = null;
-        function openEditModal(id, name, qtyIn, qtyOut) {
+        function openEditModal(id, name, qtyIn, qtyOut, unitIn = 'pcs', unitOut = 'pcs') {
             document.getElementById('editId').value = id;
             document.getElementById('editName').value = name;
             document.getElementById('editQtyIn').value = qtyIn;
             document.getElementById('editQtyOut').value = qtyOut;
+            document.getElementById('editUnitIn').value = unitIn || 'pcs';
+            document.getElementById('editUnitOut').value = unitOut || 'pcs';
             pendingEditName = name;
             document.getElementById('editModal').classList.remove('hidden');
         }
@@ -514,6 +580,8 @@
             const newName = document.getElementById('editName').value.trim();
             const qtyIn = parseInt(document.getElementById('editQtyIn').value) || 0;
             const qtyOut = parseInt(document.getElementById('editQtyOut').value) || 0;
+            const unitIn = document.getElementById('editUnitIn').value;
+            const unitOut = document.getElementById('editUnitOut').value;
 
             if (!newName) {
                 showToast('Please enter item name', 'error');
@@ -532,7 +600,9 @@
                     body: JSON.stringify({
                         name: newName,
                         qty_in: qtyIn,
-                        qty_out: qtyOut
+                        qty_out: qtyOut,
+                        unit_in: unitIn,
+                        unit_out: unitOut
                     })
                 });
                 
@@ -655,7 +725,7 @@
             
             // Group by item name and sum
             const summary = categoryItems.reduce((acc, curr) => {
-                if (!acc[curr.name]) acc[curr.name] = { id: curr.id, in: 0, out: 0 };
+                if (!acc[curr.name]) acc[curr.name] = { id: curr.id, in: 0, out: 0, unit: curr.unit || 'pcs', unit_in: curr.unit_in || 'pcs', unit_out: curr.unit_out || 'pcs' };
                 acc[curr.name].in += Number(curr.qty_in);
                 acc[curr.name].out += Number(curr.qty_out);
                 return acc;
@@ -695,6 +765,7 @@
             items.forEach(name => {
                 const item = summary[name];
                 const balance = item.in - item.out;
+                const displayUnit = item.unit || 'pcs';
                 totalIn += item.in;
                 totalOut += item.out;
                 if (balance < 10) lowStock++;
@@ -717,16 +788,17 @@
                         <div class="flex-1">
                             <h3 class="font-bold text-slate-500 text-xs uppercase tracking-widest mb-1">${name}</h3>
                             <div class="flex gap-4 text-sm font-medium">
-                                <span class="text-blue-500"><i class="fas fa-arrow-down mr-1"></i>In: ${item.in}</span>
-                                <span class="text-orange-500"><i class="fas fa-arrow-up mr-1"></i>Out: ${item.out}</span>
+                                <span class="text-blue-500"><i class="fas fa-arrow-down mr-1"></i>In: ${item.in} ${item.unit_in || 'pcs'}</span>
+                                <span class="text-orange-500"><i class="fas fa-arrow-up mr-1"></i>Out: ${item.out} ${item.unit_out || 'pcs'}</span>
                             </div>
                         </div>
                         <div class="text-right">
                             <p class="text-3xl font-black ${statusColor}">${balance}</p>
                             <p class="text-[10px] font-bold ${statusColor} uppercase">${statusText}</p>
+                            <p class="text-[10px] text-slate-400">${displayUnit}</p>
                         </div>
                         <div class="flex flex-col gap-2 ml-4">
-                            <button onclick="openEditModal('${item.id}', '${name}', ${item.in}, ${item.out})" 
+                            <button onclick="openEditModal('${item.id}', '${name}', ${item.in}, ${item.out}, '${item.unit_in || 'pcs'}', '${item.unit_out || 'pcs'}')" 
                                 class="p-2 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-100 transition" title="Edit">
                                 <i class="fas fa-pen"></i>
                             </button>
@@ -751,6 +823,9 @@
             const name = document.getElementById('name').value.trim();
             const qtyIn = parseInt(document.getElementById('qtyIn').value) || 0;
             const qtyOut = parseInt(document.getElementById('qtyOut').value) || 0;
+            const unitIn = document.getElementById('unitIn').value;
+            const unitOut = document.getElementById('unitOut').value;
+            const defaultUnit = document.getElementById('defaultUnit').value;
 
             if (!name) {
                 showToast('Please enter item name', 'error');
@@ -774,7 +849,10 @@
                         name: name,
                         qty_in: qtyIn,
                         qty_out: qtyOut,
-                        category: currentCategory
+                        category: currentCategory,
+                        unit_in: unitIn,
+                        unit_out: unitOut,
+                        unit: defaultUnit
                     })
                 });
                 
