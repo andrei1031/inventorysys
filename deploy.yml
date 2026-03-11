@@ -24,13 +24,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create config.js
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      - name: Create config.js from existing config
         run: |
-          echo "const SUPABASE_URL = '$SUPABASE_URL';" > settings.js
-          echo "const SUPABASE_KEY = '$SUPABASE_KEY';" >> settings.js
+          cp config.js settings.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
